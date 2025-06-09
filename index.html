@@ -1,0 +1,204 @@
+# Conditional Career Journey Form (Standalone HTML)
+
+Just drop this single `index.html` into your GitHub Pages repo. No extra files needed.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Career Journey Assessment</title>
+  <style>
+    :root {
+      --bg: #f9fafb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --accent: #3b82f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .container {
+      width: 100%;
+      max-width: 600px;
+      margin: 1rem;
+      padding: 2rem;
+      background: var(--card);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    h1, h2 { text-align: center; margin-bottom: 1rem; }
+    form > div, form fieldset { margin-bottom: 1rem; }
+    label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+    input[type=text] {
+      width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;
+    }
+    fieldset { border: none; padding: 0; }
+    legend { font-weight: bold; margin-bottom: 0.5rem; }
+    fieldset label { display: block; margin-bottom: 0.25rem; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 1rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .hidden { display: none; }
+    /* CSS spinner */
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 6px solid #ddd;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    ul { padding-left: 1.25rem; }
+    ul li { margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="container" id="form-container">
+    <h1>Career Journey Assessment</h1>
+    <form id="career-form"></form>
+    <button type="button" id="submit-btn" class="btn">Generate Action Items</button>
+  </div>
+
+  <div class="container hidden" id="loading-container">
+    <div class="spinner"></div>
+    <p style="text-align:center;">Preparing your personalized plan...</p>
+  </div>
+
+  <div class="container hidden" id="results-container">
+    <h2>Your Action Plan</h2>
+    <ul id="results-list"></ul>
+    <button type="button" id="download-btn" class="btn">Download PDF</button>
+  </div>
+
+  <script>
+    // Configuration (edit directly here)
+    const CONFIG = {
+      templateImageUrl: 'https://your-wordpress-site.com/path/to/background.png',
+      questions: [
+        { id: 'name', type: 'text', label: 'Name' },
+        {
+          id: 'animal', type: 'radio', label: 'What type of animal do you like?',
+          options: [
+            { value: 'dog',    label: 'Dog',    actions: ['You are beta humans'] },
+            { value: 'cat',    label: 'Cat',    actions: ['You are beta humans'] },
+            { value: 'lizard', label: 'Lizard', actions: ['You are alpha humans'] },
+            { value: 'mouse',  label: 'Mouse',  actions: ['You are alpha humans'] }
+          ]
+        },
+        {
+          id: 'location', type: 'radio', label: 'If you could go anywhere right now, where would you go?',
+          options: [
+            { value: 'home',  label: 'Home',  actions: ['You are couch potatoes and should connect with a friend'] },
+            { value: 'work',  label: 'Work',  actions: ['You need to get out more'] },
+            { value: 'park',  label: 'Park',  actions: ['Visit https://google.com and find a new park'] },
+            { value: 'beach', label: 'Beach', actions: ['Go to the nearest beach in your area today'] }
+          ]
+        },
+        {
+          id: 'transport', type: 'radio', label: 'Favorite method of transportation',
+          options: [
+            { value: 'car',   label: 'Car',   actions: ['Buy a new car at https://www.cargurus.com'] },
+            { value: 'plane', label: 'Plane', actions: ['Purchase a plane ticket at https://www.kayak.com'] },
+            { value: 'boat',  label: 'Boat',  actions: ['Take a ferry ride in Long Beach'] }
+          ]
+        }
+      ]
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const formEl = document.getElementById('career-form');
+      const submitBtn = document.getElementById('submit-btn');
+      const formCont = document.getElementById('form-container');
+      const loadCont = document.getElementById('loading-container');
+      const resCont = document.getElementById('results-container');
+      const resList = document.getElementById('results-list');
+      const downloadBtn = document.getElementById('download-btn');
+
+      // Build form
+      CONFIG.questions.forEach(q => {
+        let wrapper;
+        if (q.type === 'text') {
+          wrapper = document.createElement('div');
+          wrapper.innerHTML = `
+            <label for="${q.id}">${q.label}</label>
+            <input type="text" id="${q.id}" name="${q.id}" required />
+          `;
+        } else if (q.type === 'radio') {
+          wrapper = document.createElement('fieldset');
+          wrapper.innerHTML = `<legend>${q.label}</legend>` +
+            q.options.map(opt =>
+              `<label><input type="radio" name="${q.id}" value="${opt.value}" required> ${opt.label}</label>`
+            ).join('');
+        }
+        formEl.appendChild(wrapper);
+      });
+
+      // Handle submit
+      submitBtn.addEventListener('click', () => {
+        const actions = [];
+        CONFIG.questions.forEach(q => {
+          if (q.type === 'radio') {
+            const sel = document.querySelector(`input[name="${q.id}"]:checked`);
+            if (sel) {
+              const opt = q.options.find(o => o.value === sel.value);
+              actions.push(...opt.actions);
+            }
+          }
+        });
+        formCont.classList.add('hidden');
+        loadCont.classList.remove('hidden');
+        setTimeout(() => {
+          loadCont.classList.add('hidden');
+          resList.innerHTML = actions.map(a => `<li>${a}</li>`).join('');
+          resCont.classList.remove('hidden');
+        }, 800);
+      });
+
+      // PDF Download
+      downloadBtn.addEventListener('click', () => {
+        import('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js')
+          .then(js => {
+            const { jsPDF } = js.jspdf;
+            const doc = new jsPDF({ unit: 'px', format: 'a4' });
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = CONFIG.templateImageUrl;
+            img.onload = () => {
+              doc.addImage(img, 'PNG', 0, 0,
+                doc.internal.pageSize.getWidth(),
+                doc.internal.pageSize.getHeight());
+              const items = Array.from(resList.querySelectorAll('li'))
+                                 .map(li => li.textContent);
+              items.forEach((txt, i) => doc.text(txt, 40, 100 + i * 20));
+              doc.save('action-plan.pdf');
+            };
+          });
+      });
+    });
+  </script>
+</body>
+</html>
+```
+
+**Just upload this `index.html` to GitHub Pages**, and you’ll immediately see the form fields, spinner, results, and PDF-download functionality—no other setup required.
